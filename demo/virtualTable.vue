@@ -297,3 +297,7 @@ export default {
     border-bottom: 1px solid #999;
 }
 </style>
+
+
+✨使用
+<VirtualTable class="xxx" :dataSource="xxx" :column="xxx" height="282" align="center"></VirtualTable>
