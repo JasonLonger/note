@@ -14,7 +14,7 @@
                 :align="align">
             </el-table-column>
         </el-table>
-        <div class="virtual-table">
+        <div class="virtual-table" ref='virtualTable'>
             <!-- 可视区域容器 -->
             <div
                 class="infinite-list-container"
@@ -26,7 +26,7 @@
                 <!-- 列表项渲染区域 -->
                 <div ref="content" class="infinite-list">
                     <el-table class="content-table" :data="visibleData">
-                        <template class="infinite-list-item" ref="items">
+                        <template class="infinite-list-item">
                             <el-table-column
                                 v-for="item in column"
                                 :key="item.prop + 'content'"
@@ -62,15 +62,15 @@ export default {
             type: Number,
             default: 47
         },
-        // 缓冲区比例，渲染项 = 可视项 + 2 * 缓冲区比例 * 可视项，算法可在下面调整
-        bufferScale: {
+        // 缓冲区个数，渲染项 = 可视项 + 2 * 缓冲区个数，算法可在下面调整
+        bufferNum: {
             type: Number,
             default: 1
         },
-        // 容器高度
-        height: {
-            type: String
-            default: '282px' // 这里默认5项，6 * 47 = 282 
+        // 可显项个数
+        visibleCount: {
+            type: Number
+            default: 6
         },
         // 字段偏移
         align: {
@@ -94,6 +94,10 @@ export default {
                 }
             })
         },
+        // table高度 = （列表项 + 表头）* estimatedItemSize
+        height () {
+            return (this.visibleCount + 1) * this.estimatedItemSize
+        },
         computedBoxHeight () {
             const emptyH = 60 // el-table空盒子默认高60
             const tableHeadH = 48 // 表头高度默认48
@@ -107,25 +111,27 @@ export default {
         overFlowY () {
             return this._listData.length > this.visibleCount ? 'auto' : 'hidden'
         },
-        // 可渲染列表数
-        visibleCount () {
-            return Math.ceil(this.screenHeight / this.estimatedItemSize)
-        },
         /*
             支持平滑滚动，提供缓冲区，上方above 下方below
         */
         // 上方缓冲区数量
         aboveCount () {
-            return Math.min(this.start, this.bufferScale * this.visibleCount)
+            const len = this.dataSource.length
+            const num = this.bufferNum
+            if (this.start < num) return this.start
+            if (this.start >= num && this.end + num <= len) return num
+            return 2 * num - (len - this.end)
         },
         // 下方缓冲区数量
         belowCount () {
-            return Math.min(this.dataSource.length - this.end, this.bufferScale * this.visibleCount)
+            return 2 * this.bufferNum - this.aboveCount
         },
         // 可显示项
         visibleData () {
             const start = this.start - this.aboveCount
             const end = this.end + this.belowCount
+            // 不算很长就关闭列表渲染
+            if (this.dataSource.length <= 2 * this.bufferNum + this.visibleCount) return this._listData
             return this._listData.slice(start, end)
         },
         // 扩展item
@@ -140,7 +146,6 @@ export default {
     },
     data () {
         return {
-            screenHeight: 0, // 可视区域高度
             start: 0, // 起始索引
             end: 0 // 结束索引
         }
@@ -171,7 +176,7 @@ export default {
         },
         // 获取列表项的当前尺寸
         updateItemSize () {
-            const nodes = this.$refs.items
+            const nodes = this.$refs.virtualTable.getElementsByClassName('el-table-row')
             nodes.forEach((node) => {
                 // 通过getBoundingClientRect api获取dom节点相关位置信息
                 const rect = node.getBoundingClientRect()
@@ -210,14 +215,14 @@ export default {
     },
     mounted () {
         // 初始化
-        this.screenHeight = this.$el.clientHeight
         this.start = 0
         this.end = this.start + this.visibleCount
     },
     // 使用vue update钩子函数，在数据更新时候触发，获取列表每项的位置信息并缓存
     updated () {
         this.$nextTick(function () {
-            if (!this.$refs.items || !this.$refs.items.length)  return
+            const nodes = this.$refs.virtualTable.getElementsByClassName('el-table-row')
+            if (!nodes || !nodes.length)  return
             this.updateItemSize() // 获取真实元素大小，修改对应尺寸缓存
             const height = this.positions[this.positions.length - 1]?.bottom // 列表总高度 = 列表最后项bottom
             this.$refs.phantom.style.height = height + 'px'
@@ -300,4 +305,4 @@ export default {
 
 
 ✨使用
-<VirtualTable class="xxx" :dataSource="xxx" :column="xxx" height="282" align="center"></VirtualTable>
+<VirtualTable class="xxx" :dataSource="xxx" :column="xxx" align="center"></VirtualTable>
