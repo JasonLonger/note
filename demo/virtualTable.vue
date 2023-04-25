@@ -57,11 +57,6 @@ export default {
             type: Array,
             default: () => []
         },
-        // 预估高度，参考el-table每项高度，如后续扩展撑开，可配
-        estimatedItemSize: {
-            type: Number,
-            default: 47
-        },
         // 缓冲区个数，渲染项 = 可视项 + 2 * 缓冲区个数，算法可在下面调整
         bufferNum: {
             type: Number,
@@ -82,6 +77,13 @@ export default {
         _listData () {
             // 监听数据，初始化scrollTop
             if (this.$refs.list) this.$refs.list.scrollTop = 0
+            this.$nextTick(() => {
+                if (this.$refs.virtualTable) {
+                    // 兼容不同分辨率下的高度
+                    const node = this.$refs.virtualTable.getElementsByClassName('el-table__row')[0]
+                    if (node) this.estimatedItemSize = node.offsetHeight
+                }
+            })
         }
     },
     computed: {
@@ -147,7 +149,9 @@ export default {
     data () {
         return {
             start: 0, // 起始索引
-            end: 0 // 结束索引
+            end: 0, // 结束索引
+            // 预估高度，参考el-table每项高度，如后续扩展撑开，可配
+            estimatedItemSize: 47
         }
     },
     methods: {
@@ -294,12 +298,18 @@ export default {
     left: 0;
     top: 0;
     right: 0;
+    ::v-deep .el-table__body-wrapper {
+        overflow-x: hidden;
+    }
 }
 .infinite-list-item {
     padding: 5px;
     color: #555;
     box-sizing: border-box;
     border-bottom: 1px solid #999;
+}
+::v-deep .virtual-table tbody tr:hover>td {
+    background-color: #ffffff!important;
 }
 </style>
 
