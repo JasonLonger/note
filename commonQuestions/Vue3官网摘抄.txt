@@ -1,0 +1,49 @@
+单文件组件：*.vue single File components SFC
+选项式api：包含多个选项对象描述组件逻辑
+组合式api：使用导入的api函数描述组件逻辑，需搭配<script setup>使用
+import { creatApp } from 'vue'创建
+应用实例必须在调用了 .mount() 方法后才会渲染出来
+当根组件没有设置 template 选项时，Vue 将自动使用容器的 innerHTML 作为模板
+app.config 提供应用配置
+app.component 注册组件
+mustache语法，双大括号
+<a @[evnetName]="xxx">
+动态参数中表达式的值应当是一个字符串，或者是 null。特殊值 null 意为显式移除该绑定。其他非字符串的值会触发警告。
+可修改计算属性：
+const test = computed({
+get () {
+return xxx + yyy
+},
+set (newValue) {
+xxx = newValue.xxx
+yyy = newValue.yyy
+}
+})
+getter不应该有副作用，例如异步请求和修改dom，只做计算
+
+当 v-if 和 v-for 同时存在于一个元素上的时候，v-if 会首先被执行。请查看列表渲染指南获取更多细节。
+
+能够被监听的数组变化方法：
+push、pop、shift、unshift、splice、sort、reverse
+
+v-model='text' => :value='test' @input="event => text = event.target.value"
+
+默认情况下，v-model 会在每次 input 事件后更新数据 (IME 拼字阶段的状态例外)。你可以添加 lazy 修饰符来改为在每次 change 事件后更新数据
+
+钩子应该在组件初始化时候同步注册，不要用定时器套住
+
+
+
+侦听器回调中能访问被 Vue 更新之后的 DOM，你需要指明 flush: 'post' 选项
+
+后置刷新的 watchEffect() 有个更方便的别名 watchPostEffect()
+
+侦听器必须用同步语句创建：如果用异步回调创建一个侦听器，那么它不会绑定到当前组件上，你必须手动停止它，以防内存泄漏
+
+
+
+当在 v-for 中使用模板引用时，对应的 ref 中包含的值是一个数组，它将在元素被挂载后包含对应整个列表的所有元素：
+
+应该注意的是，ref 数组并不保证与源数组相同的顺序。
+
+动态组件：<component :is="xxx" 一般搭配v-for>
