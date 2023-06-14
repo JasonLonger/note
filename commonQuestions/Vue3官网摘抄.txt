@@ -1,6 +1,8 @@
 单文件组件：*.vue single File components SFC
 选项式api：包含多个选项对象描述组件逻辑
 组合式api：使用导入的api函数描述组件逻辑，需搭配<script setup>使用
+组合式函数：利用Vue的组合式api来封装和复用有状态逻辑的函数
+Vue SSG: 指使用 Vue.js 框架的静态网站生成器（Static Site Generator）。这些生成器使用一系列配置、模板和数据来生成静态 HTML 文件和相关资源，通常不需要使用服务器来渲染页面。Vue SSG 通常用于快速搭建高性能、低成本的静态网站
 import { creatApp } from 'vue'创建
 应用实例必须在调用了 .mount() 方法后才会渲染出来
 当根组件没有设置 template 选项时，Vue 将自动使用容器的 innerHTML 作为模板
@@ -47,3 +49,66 @@ v-model='text' => :value='test' @input="event => text = event.target.value"
 应该注意的是，ref 数组并不保证与源数组相同的顺序。
 
 动态组件：<component :is="xxx" 一般搭配v-for>
+当使用 <component :is="..."> 来在多个组件间作切换时，被切换掉的组件会被卸载。我们可以通过 <KeepAlive> 组件强制被切换掉的组件仍然保持“存活”的状态。
+
+全局注册： app.component('xx', xx)
+链式： app.component().component()
+
+prop校验
+defineProp({
+test: {
+validator(value) {
+return ['1', [2]].includes(value)
+}
+}
+})
+
+emit校验
+
+
+
+禁用透传（attributes继承）
+export default { 
+inheritAttrs: false
+}
+
+插槽：v-slot:header   子组件，<slot name="header">
+
+注入解决祖先与子孙传递
+provide('名', {}) // 值可以是响应式对象
+
+大型项目建议使用symbol作为注入名 const xxx = Symbol() 避免重名等潜在冲突
+
+异步组件：defineAsyncComponent
+全局app.component('Mycomponent', defineAsyncComponent(() => {
+import('./components/MyComponent.vue')
+}))
+局部注册：
+import { defineAsyncComponent } from 'vue'
+const xxx = defineAsyncComponent(() => {
+import(./xxx)
+})
+提供额外配置，加载中、失败后显示，具体看官网，可搭配suspense
+
+复用无状态逻辑的库：lodash、date-fns
+项目中可以加的
+
+TS类型：target: HTMLButtonElement, event: string, callback: EventListenerOrEventListenerObject
+组合式函数约定用驼峰命名法命名，并以‘use’作为开头，在<script setup>或setup钩子中，以始终被同步调用
+作用：抽离通用组件，以及改善代码逻辑，相当于可以相互通信的组件范围内的服务.
+
+自定义指令：app.directive('focus', {})
+
+插件：一个拥有install()方法的对象，或者安装函数本身
+
+suspense #default #fallback 一般用不上
+
+前端工程化最终目的是：为了能够更好的维护代码
+
+前缀为vue.runtime.*文件只包含运行时版本，即不包含编译器，模板由构建步骤预先编译
+名称不包含.runtime文件为完整版，包含编译器，支持由浏览器直接编译模板，体积增加大概14kb
+所以默认工具链如vue-cli、vite等都会使用仅含运行时版本，所有SFC模板被预编译
+
+如果使用了构建步骤，应当尽量选择提供 ES 模块格式的依赖，它们对 tree-shaking 更友好。举例来说，选择 lodash-es 比 lodash 更好。
+
+不推荐使用 reactive() 的泛型参数，因为处理了深层次 ref 解包的返回值与泛型参数的类型不同
