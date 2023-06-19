@@ -1,0 +1,40 @@
+地址：https://juejin.cn/post/6844904021308735502
+浏览器缓存有两种情况，一种是需要发送HTTP请求，一种不用
+首先检查强缓存，这个阶段不需要发送HTTP请求，通过检查字段，HTTP/1.0协议是Expires，HTTP/1.1协议是Cache-Control
+Expires:过期时间（HTTP/1.0），存在服务端返回的请求头中，告诉浏览器过期时间前可以从缓存获取数据，但是存在一个缺陷：服务端时间和浏览器时间可能不一致，后被弃用
+
+Cache-Control：(HTTP/1.1)，非具体过期时间点方式，使用过期时长控制缓存
+
+max-age还可以组合多个指令达到不同效果
+public: 客户端和代理服务器都可以缓存（服务端到达客户端，可能经过多个代理服务端节点）
+private: 只能浏览器缓存，中间代理节点不缓存
+no-cache：跳过当前强缓存，发起HTTP请求，即直接进入协商缓存
+no-store：没有任何缓存形式
+s-maxage: 针对代理服务器的缓存时间
+注意：Expires和Cache-Control共存时，优先Cache-Control，这两个标识是服务器返回给浏览器的
+
+Last-Modified: 最后修改时间，第一次服务端返回响应头给浏览器，后面强缓存后，协商缓存时，发起请求，存在If-Modified-Since字段发送给服务端，服务端作对比，有变化就返回最新资源，没有就返回304，告诉浏览器直接用缓存
+
+ETag: 由服务器根据当前文件内容生成的唯一标识，和上面流程差不多，字段名改为If-None-Match
+
+两者比较：
+精确度，Etag高于Last-Modified
+主要体现在两方面，编辑但文件没变化，Last-Modified无感；或者一秒内操作，Last-Modified感知单位为秒
+性能上相反，Last-Modified只是记录时间点，Etag则需要根据具体文件生成哈希值
+优先级上，服务器优先支持ETag
+
+缓存位置（从高到低）
+Service Worker: 借鉴Web Worker思路，无法直接操作访问DOM，但可以完成很多有用功能，比如离线缓存、消息推送、网络代理等功能，其中离线缓存就是Service Worker Cache
+
+Memory Cache和Disk Cache:
+Memory Cache指内存缓存，效率最快，存活最短，渲染进程结束后就不存在
+Disk Cache磁盘缓存，效率比内存缓存慢，但是优势在存储容量和存储时长
+主要策略：
+比较大的JS、CSS文件直接丢进磁盘缓存，小的丢内存
+内存使用率较高时，文件优先进入磁盘缓存
+
+Push Cache
+推送缓存，浏览器最后一道防线，HTTP/2内容
+
+总结：
+首先一般都不用Expired了，现在都用Cache-Control验证强缓存是否可用，可用就直接使用缓存，不行就进入协商缓存，即发起HTTP请求，服务器端通过请求头If-Modified-Since或者If-None-Match字段判断资源是否更新，没有就返回304用缓存，更新就返回最新文件。
